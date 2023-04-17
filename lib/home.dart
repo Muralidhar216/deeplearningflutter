@@ -19,7 +19,7 @@ class _MyHomeState extends State<MyHome> {
   String prediction = '';
   Future<void> uploadAudio(File audioFile) async {
     final url =
-        "http://0.0.0.0:10000/predict"; // Change this to your Flask back-end URL
+        "http://10.0.2.2:5000/predict"; // Change this to your Flask back-end URL
     var request = await http.MultipartRequest('POST', Uri.parse(url));
     request.files
         .add(await http.MultipartFile.fromPath('audio', audioFile.path));
