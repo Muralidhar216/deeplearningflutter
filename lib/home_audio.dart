@@ -1,4 +1,4 @@
-/*import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
@@ -41,6 +41,7 @@ class _MyHomeState extends State<MyHome> {
 
     if (result != null) {
       PlatformFile file = result.files.first;
+
       setState(() {
         _filePath = file.path;
       });
@@ -60,7 +61,7 @@ class _MyHomeState extends State<MyHome> {
   void initState() {
     super.initState();
 
-    setAudio();
+    //setAudio();
 
     audioPlayer.onPlayerStateChanged.listen((state) {
       setState(() {
@@ -84,10 +85,16 @@ class _MyHomeState extends State<MyHome> {
   Future setAudio() async {
     audioPlayer.setReleaseMode(ReleaseMode.loop);
 
-    final result = await FilePicker.platform.pickFiles();
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['wav'],
+    );
     if (result != null) {
       final file = File(result.files.single.path!);
       audioPlayer.setSourceUrl(file.path);
+      setState(() {
+        _filePath = file.path;
+      });
     }
   }
 
@@ -110,7 +117,7 @@ class _MyHomeState extends State<MyHome> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             ElevatedButton(
-              onPressed: pickWavFile,
+              onPressed: setAudio,
               child: Text('Select .wav file'),
               style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromARGB(255, 58, 12, 119)),
@@ -170,4 +177,4 @@ class _MyHomeState extends State<MyHome> {
       ),
     );
   }
-}*/
+}
