@@ -92,7 +92,7 @@ class _Audio_PlayerState extends State<Audio_Player> {
                 ),
               ),
               CircleAvatar(
-                radius: 35,
+                radius: 28,
                 child: IconButton(
                   icon: Icon(
                     isPlaying ? Icons.pause : Icons.play_arrow,
