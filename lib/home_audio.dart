@@ -21,7 +21,7 @@ class _MyHomeState extends State<MyHome> {
   String prediction = '';
   Future<void> uploadAudio(File audioFile) async {
     final url =
-        "https://10.0.2.2.5000/predict"; // Change this to your Flask back-end URL
+        "http://10.0.2.2:5000//predict"; // Change this to your Flask back-end URL
     var request = await http.MultipartRequest('POST', Uri.parse(url));
     request.files
         .add(await http.MultipartFile.fromPath('audio', audioFile.path));
@@ -33,6 +33,7 @@ class _MyHomeState extends State<MyHome> {
     print(responseData);
   }
 
+//pickwavfile not used
   Future<void> pickWavFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -48,10 +49,16 @@ class _MyHomeState extends State<MyHome> {
     }
   }
 
-  final audioPlayer = AudioPlayer();
-  bool isPlaying = false;
-  Duration duration = Duration.zero;
-  Duration position = Duration.zero;
+//Audio player 1
+  final audioPlayer1 = AudioPlayer();
+//Audio player 2
+  final audioPlayer2 = AudioPlayer();
+  bool isPlaying1 = false;
+  bool isPlaying2 = false;
+  Duration duration1 = Duration.zero;
+  Duration duration2 = Duration.zero;
+  Duration position1 = Duration.zero;
+  Duration position2 = Duration.zero;
 
   String formatTime(int seconds) {
     return '${(Duration(seconds: seconds))}'.split('.')[0].padLeft(8, '0');
@@ -62,28 +69,47 @@ class _MyHomeState extends State<MyHome> {
     super.initState();
 
     //setAudio();
+    //loadAudio();
 
-    audioPlayer.onPlayerStateChanged.listen((state) {
+    audioPlayer1.onPlayerStateChanged.listen((state) {
       setState(() {
-        isPlaying = state == PlayerState.playing;
+        isPlaying1 = state == PlayerState.playing;
       });
     });
 
-    audioPlayer.onDurationChanged.listen((newDuration) {
+    audioPlayer2.onPlayerStateChanged.listen((state) {
       setState(() {
-        duration = newDuration;
+        isPlaying2 = state == PlayerState.playing;
       });
     });
 
-    audioPlayer.onPositionChanged.listen((newPosition) {
+    audioPlayer1.onDurationChanged.listen((newDuration) {
       setState(() {
-        position = newPosition;
+        duration1 = newDuration;
+      });
+    });
+
+    audioPlayer2.onDurationChanged.listen((newDuration) {
+      setState(() {
+        duration2 = newDuration;
+      });
+    });
+
+    audioPlayer1.onPositionChanged.listen((newPosition) {
+      setState(() {
+        position1 = newPosition;
+      });
+    });
+
+    audioPlayer2.onPositionChanged.listen((newPosition) {
+      setState(() {
+        position2 = newPosition;
       });
     });
   }
 
   Future setAudio() async {
-    audioPlayer.setReleaseMode(ReleaseMode.loop);
+    audioPlayer1.setReleaseMode(ReleaseMode.stop);
 
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -91,26 +117,49 @@ class _MyHomeState extends State<MyHome> {
     );
     if (result != null) {
       final file = File(result.files.single.path!);
-      audioPlayer.setSourceUrl(file.path);
+      audioPlayer1.setSourceUrl(file.path);
       setState(() {
         _filePath = file.path;
       });
     }
   }
 
+  Future loadAudio() async {
+    audioPlayer2.setReleaseMode(ReleaseMode.stop);
+
+    //Load audio from assets
+    final player = AudioCache(prefix: 'assets/');
+    final url = await player.load(prediction + '.wav');
+    audioPlayer2.setSourceUrl(url.path);
+  }
+
   @override
   void dispose() {
-    audioPlayer.dispose();
+    audioPlayer1.dispose();
+    audioPlayer2.dispose();
 
     super.dispose();
   }
 
+// widgets starting
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Predictor'),
+        title: const Text('Predictor'),
+        centerTitle: true,
+        actions: <Widget>[
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.logout_outlined),
+          )
+        ],
         backgroundColor: Color.fromARGB(255, 58, 12, 119),
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        )),
       ),
       body: Center(
         child: Column(
@@ -128,22 +177,25 @@ class _MyHomeState extends State<MyHome> {
                 : Text('No file selected'),
             Slider(
               min: 0,
-              max: duration.inSeconds.toDouble(),
-              value: position.inSeconds.toDouble(),
+              max: duration1.inSeconds.toDouble(),
+              value: position1.inSeconds.toDouble(),
               onChanged: (value) async {
-                final position = Duration(seconds: value.toInt());
-                await audioPlayer.seek(position);
+                final position1 = Duration(seconds: value.toInt());
+                await audioPlayer1.seek(position1);
 
-                await audioPlayer.resume();
+                await audioPlayer1.resume();
               },
+              activeColor: const Color.fromARGB(255, 69, 173, 168),
+              inactiveColor: Colors.black12,
+              thumbColor: Colors.black,
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(formatTime(position.inSeconds)),
-                  Text(formatTime((duration - position).inSeconds)),
+                  Text(formatTime(position1.inSeconds)),
+                  Text(formatTime((duration1 - position1).inSeconds)),
                 ],
               ),
             ),
@@ -151,27 +203,86 @@ class _MyHomeState extends State<MyHome> {
               radius: 35,
               child: IconButton(
                 icon: Icon(
-                  isPlaying ? Icons.pause : Icons.play_arrow,
+                  isPlaying1 ? Icons.pause : Icons.play_arrow,
                 ),
                 iconSize: 50,
                 onPressed: () async {
-                  if (isPlaying) {
-                    await audioPlayer.pause();
+                  if (isPlaying1) {
+                    await audioPlayer1.pause();
                   } else {
-                    await audioPlayer.resume();
+                    await audioPlayer1.resume();
                   }
                 },
               ),
             ),
+            SizedBox(
+              width: 50, //<-- SEE HERE
+            ),
             ElevatedButton(
               onPressed: () async {
                 await uploadAudio(File(_filePath ?? ""));
+                loadAudio();
               },
               child: Text('Predict'),
               style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromARGB(255, 58, 12, 119)),
             ),
-            prediction != '' ? Text('Prediction : $prediction') : Text('')
+            prediction != ''
+                ? Text(
+                    'Prediction : $prediction',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 201, 4, 4),
+                    ),
+                  )
+                : Text(''),
+            Text(
+              "Prediction Audio",
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Color.fromARGB(255, 26, 99, 3),
+              ),
+            ),
+            Slider(
+              min: 0,
+              max: duration2.inSeconds.toDouble(),
+              value: position2.inSeconds.toDouble(),
+              onChanged: (value) async {
+                final position2 = Duration(seconds: value.toInt());
+                await audioPlayer2.seek(position2);
+
+                await audioPlayer2.resume();
+              },
+              activeColor: const Color.fromARGB(255, 69, 173, 168),
+              inactiveColor: Colors.black12,
+              thumbColor: Colors.black,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(formatTime(position2.inSeconds)),
+                  Text(formatTime((duration2 - position2).inSeconds)),
+                ],
+              ),
+            ),
+            CircleAvatar(
+              radius: 35,
+              child: IconButton(
+                icon: Icon(
+                  isPlaying2 ? Icons.pause : Icons.play_arrow,
+                ),
+                iconSize: 50,
+                onPressed: () async {
+                  if (isPlaying2) {
+                    await audioPlayer2.pause();
+                  } else {
+                    await audioPlayer2.resume();
+                  }
+                },
+              ),
+            )
           ],
         ),
       ),
