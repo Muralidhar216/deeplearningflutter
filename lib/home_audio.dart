@@ -240,7 +240,8 @@ class _MyHomeState extends State<MyHome> {
               "Prediction Audio",
               style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: Color.fromARGB(255, 26, 99, 3),
+                color: Color.fromARGB(255, 9, 117, 78),
+                fontSize: 30,
               ),
             ),
             Slider(
@@ -253,8 +254,8 @@ class _MyHomeState extends State<MyHome> {
 
                 await audioPlayer2.resume();
               },
-              activeColor: const Color.fromARGB(255, 69, 173, 168),
-              inactiveColor: Colors.black12,
+              activeColor: Color.fromARGB(255, 11, 101, 97),
+              inactiveColor: Color.fromARGB(31, 140, 7, 49),
               thumbColor: Colors.black,
             ),
             Padding(
